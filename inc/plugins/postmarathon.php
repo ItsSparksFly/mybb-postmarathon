@@ -14,6 +14,8 @@ $plugins->add_hook('build_friendly_wol_location_end', 'postmarathon_location_act
 function postmarathon_info()
 {
 
+    global $lang;
+
     $lang->load("postmarathon");
     return [
         "name"			=> $lang->postmarathon_title,
@@ -407,11 +409,15 @@ function postmarathon_misc() {
             $gesamtwordcount += $postswordcount;
 
             // style numbers
-            $gesamtpostcount, $gesamtcharscount, $gesamtwordcount = number_format($gesamtpostcount, '0', ',', '.'), number_format($gesamtcharscount, '0', ',', '.'), $gesamtwordcount = number_format($gesamtwordcount, '0', ',', '.');
-            $inplayposts_count, $postswordcount, $postscharcount =  number_format($inplayposts_count, '0', ',', '.'), number_format($postswordcount, '0', ',', '.'), number_format($postscharcount, '0', ',', '.');
+            $gesamtpostcount = number_format($gesamtpostcount, '0', ',', '.');
+            $gesamtcharscount = number_format($gesamtcharscount, '0', ',', '.');
+            $gesamtwordcount = number_format($gesamtwordcount, '0', ',', '.');
+            $inplayposts_count = number_format($inplayposts_count, '0', ',', '.');
+            $postswordcount = number_format($postswordcount, '0', ',', '.');
+            $postscharcount =  number_format($postscharcount, '0', ',', '.');
 
             if($marathon_user['posts'] != 0) {
-                $userposts = number_format($marathon_user['posts'];, '0', ',', '.');
+                $userposts = number_format($marathon_user['posts'], '0', ',', '.');
             }
             if($marathon_user['words'] != 0) {
                 $userwords  = number_format($marathon_user['words'], '0', ',', '.');
@@ -437,7 +443,7 @@ function postmarathon_misc() {
         output_page($page);
     }
 
-    if($mybb->input['action'] == "do_marathon_savedata" {
+    if($mybb->input['action'] == "do_marathon_savedata") {
 
         $query = $db->query("
             SELECT * FROM ".TABLE_PREFIX."marathon
