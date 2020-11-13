@@ -59,7 +59,7 @@ function postmarathon_install()
         'name' => 'postmarathon',
         'title' => $lang->postmarathon_settings_title,
         'description' => $lang->postmarathon_settings_desc,
-        'disporder' => 5
+        'disporder' => 5,
         'isdefault' => 0
     ];
 
@@ -292,7 +292,7 @@ function postmarathon_deactivate()
 
 function postmarathon_index() {
     global $db, $templates, $lang, $index_marathon;
-    
+
     $mid = $db->fetch_field($db->query("SELECT mid FROM ".TABLE_PREFIX."marathon ORDER BY mid DESC LIMIT 1"), "mid");
     $sumposts = $db->fetch_field($db->query("SELECT sum(posts) AS sum_posts FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '$mid'"), "sum_posts");
     $sumwords = $db->fetch_field($db->query("SELECT sum(words) AS sum_words FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '$mid'"), "sum_words");
