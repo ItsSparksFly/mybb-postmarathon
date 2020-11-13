@@ -360,7 +360,7 @@ function postmarathon_misc() {
         // since we may have multiple boards to consider, let's set up our query
         $boardlist = explode($boards, ",");
         $first = array_shift($boardlist);
-        foreach($board in $boardlist) {
+        foreach($boardlist as $board) {
             $parentlist .= "OR parentlist LIKE '$board,%' ";
         }
 
@@ -455,7 +455,7 @@ function postmarathon_misc() {
         // since we may have multiple boards to consider, let's set up our query
         $boardlist = explode($boards, ",");
         $first = array_shift($boardlist);
-        foreach($board in $boardlist) {
+        foreach($boardlist as $board) {
             $parentlist .= "OR parentlist LIKE '$board,%' ";
         }
 
