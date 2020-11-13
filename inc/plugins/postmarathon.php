@@ -7,6 +7,7 @@ if(!defined("IN_MYBB"))
 }
 
 $plugins->add_hook('misc_start', 'postmarathon_misc');
+$plugins->add_hook("index_start", "inplayquotes_index");
 $plugins->add_hook('fetch_wol_activity_end', 'postmarathon_user_activity');
 $plugins->add_hook('build_friendly_wol_location_end', 'postmarathon_location_activity');
 
@@ -32,7 +33,7 @@ function postmarathon_install()
     global $db, $lang;
     $lang->load("postmarathon");
 
-    if($db->engine=='mysql' || $db->engine=='mysqli') {
+    if($db->engine=='mysql' || $db->engine=='mysqli' && !$db->table_exists("marathon_users")) {
         $db->query("CREATE TABLE `".TABLE_PREFIX."marathon_users` (
             `muid` int(11) NOT NULL AUTO_INCREMENT,  
             `mid` mediumint(9) NOT NULL,  
@@ -271,12 +272,33 @@ function postmarathon_activate()
         'dateline' => TIME_NOW
     ];
     $db->insert_query("templates", $misc_marathon_newuser);
+
+    $misc_marathon_savedata = [
+        'title' => "misc_marathon_savedata",
+        'template' => $db->escape_string('<br /><form method="post" id="savemarathon" action="misc.php">
+                <input type="hidden" name="action" value="do_marathon_savedata" />
+                <input type="submit" value="{$lang->postmarathon_submit_data}" class="button" />
+            </form><br />'),
+        
+    ];
+    $db->insert_query("templates", $misc_marathon_savedata);
 }
 
 function postmarathon_deactivate()
 {
     global $db;
     $db->delete_query("templates", "title LIKE '%misc_marathon%'");
+}
+
+function postmarathon_index() {
+    global $db, $templates, $lang, $index_marathon;
+    
+    $mid = $db->fetch_field($db->query("SELECT mid FROM ".TABLE_PREFIX."marathon ORDER BY mid DESC LIMIT 1"), "mid");
+    $sumposts = $db->fetch_field($db->query("SELECT sum(posts) AS sum_posts FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '$mid'"), "sum_posts");
+    $sumwords = $db->fetch_field($db->query("SELECT sum(words) AS sum_words FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '$mid'"), "sum_words");
+    $sumchars = $db->fetch_field($db->query("SELECT sum(chars) AS sum_chars FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '$mid'"), "sum_chars");
+
+    eval("\$index_marathon = \"".$templates->get("index_boardstats_marathon")."\";");
 }
 
 function postmarathon_misc() {
@@ -296,8 +318,9 @@ function postmarathon_misc() {
         $boards = $mybb->settings['postmarathon_boards'];
 
         // check if user is admin
-        if($mybb->usergroup['canmodcp'] == 1){
+        if($mybb->usergroup['cancp'] == 1) {
             eval("\$marathon_admin = \"".$templates->get("misc_marathon_admin")."\";");
+            eval("\$marathon_savedata = \"".$templates->get("misc_marathon_savedata")."\";");
         }
 
         // get latest marathon
@@ -330,11 +353,18 @@ function postmarathon_misc() {
         // set up (some) counters
         $gesamtpostcount = 0;
         $postcharcount = 0;
+        $postwordcount = 0;
         $gesamtcharscount = 0;
         $gesamtwordcount = 0;
 
-        while($marathon_user = $db->fetch_array($query)) {
+        // since we may have multiple boards to consider, let's set up our query
+        $boardlist = explode($boards, ",");
+        $first = array_shift($boardlist);
+        foreach($board in $boardlist) {
+            $parentlist .= "OR parentlist LIKE '$board,%' ";
+        }
 
+        while($marathon_user = $db->fetch_array($query)) {
             // set up variables
             $postscharcount = 0;
             $postswordcount = 0;
@@ -348,13 +378,6 @@ function postmarathon_misc() {
             }
             if ($marathon_user['chars'] == "0") {
                 $userchars = $lang->postmarathon_empty_goal;
-            }
-
-            // since we may have multiple boards to consider, let's set up our query
-            $boardlist = explode($boards, ",");
-            $first = array_shift($boardlist);
-            foreach($board in $boardlist) {
-                $parentlist .= "OR parentlist LIKE '$board,%' ";
             }
 
             // count all posts by every user in given date span
@@ -412,6 +435,66 @@ function postmarathon_misc() {
 
         eval("\$page .= \"".$templates->get("misc_marathon")."\";");
         output_page($page);
+    }
+
+    if($mybb->input['action'] == "do_marathon_savedata" {
+
+        $query = $db->query("
+            SELECT * FROM ".TABLE_PREFIX."marathon
+            ORDER BY mid DESC
+            LIMIT 1
+        ");
+        $marathon = $db->fetch_array($query);
+
+        // get user's marathon data
+        $query = $db->query("
+            SELECT * FROM ".TABLE_PREFIX."marathon_users
+            WHERE mid  = '{$marathon['mid']}'
+        ");
+
+        // since we may have multiple boards to consider, let's set up our query
+        $boardlist = explode($boards, ",");
+        $first = array_shift($boardlist);
+        foreach($board in $boardlist) {
+            $parentlist .= "OR parentlist LIKE '$board,%' ";
+        }
+
+        while($marathon_user = $db->fetch_array($query)) {
+            $postscharcount = 0;
+            $postswordcount = 0;
+            $uid = $marathon_user['uid'];
+
+            // count all posts by every user in given date span
+            $query_2 = $db->query("
+                SELECT * FROM ".TABLE_PREFIX."posts p
+                LEFT JOIN ".TABLE_PREFIX."threads t
+                ON p.tid = t.tid
+                LEFT JOIN ".TABLE_PREFIX."forums f
+                ON t.fid = f.fid
+                LEFT JOIN ".TABLE_PREFIX."users u
+                ON p.uid = u.uid
+                WHERE (parentlist LIKE '$first,%' ".$parentlist."')
+                AND p.dateline BETWEEN '{$marathon['startdate']}' AND '{$marathon['enddate']}'
+                AND (u.as_uid = '$uid' OR u.uid = '$uid')
+            ");
+
+            while ($inplaypost = $db->fetch_array($query_2)) {
+                $postcharcount = strlen(strip_tags($inplaypost['message']));
+                $postscharcount += $postcharcount;
+                $postwordcount = str_word_count(strip_tags($inplaypost['message']));
+                $postswordcount += $postwordcount;
+            }
+            $inplayposts_count = mysqli_num_rows($query_2);
+
+            $insert_array = [
+                "uid" => $uid,
+                "chars" => $postscharcount,
+                "words" => $postswordcount,
+                "posts" => $inplayposts_count
+            ];
+            $db->insert_query("marathon_users_data", $insert_array);
+        }   
+        redirect("misc.php?action=marathon");
     }
 
     if($mybb->input['action'] == "do_marathon_date") {
