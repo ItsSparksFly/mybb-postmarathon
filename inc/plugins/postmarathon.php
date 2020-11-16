@@ -483,7 +483,8 @@ function postmarathon_misc() {
                     if(preg_match("/,$board,/i", $inplaypost['parentlist'])) {
                         $postcharcount = strlen(strip_tags($inplaypost['message']));
                         $postscharcount += $postcharcount;
-                        $postwordcount = str_word_count(strip_tags($inplaypost['message']));
+                        $searchexp = array("\"", "”", "„", "-", "_", "<", ">", "/", "–", "[", "]");
+                        $postwordcount = count(explode(' ', preg_replace('/\s+/', ' ', str_ireplace($searchexp, '', trim($inplaypost['message']))))); 
                         $postswordcount += $postwordcount;
                     }
                 }
@@ -568,7 +569,8 @@ function postmarathon_misc() {
                     if(preg_match("/,$board,/i", $inplaypost['parentlist'])) {
                         $postcharcount = strlen(strip_tags($inplaypost['message']));
                         $postscharcount += $postcharcount;
-                        $postwordcount = str_word_count(strip_tags($inplaypost['message']));
+                        $searchexp = array("\"", "”", "„", "-", "_", "<", ">", "/", "–", "[", "]");
+                        $postwordcount = count(explode(' ', preg_replace('/\s+/', ' ', str_ireplace($searchexp, '', trim($inplaypost['message']))))); 
                         $postswordcount += $postwordcount;
                     }
                 }
