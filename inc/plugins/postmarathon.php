@@ -110,7 +110,7 @@ function postmarathon_install()
 function postmarathon_is_installed()
 {
     global $db;
-    if(isset($mybb->settings['postmarathon_boards'])) 
+    if($db->table_exists("marathon_users")) 
     {
         return true;
     }
@@ -156,11 +156,11 @@ function postmarathon_activate()
                             {$marathon_admin}<br />
                             {$marathon_newuser}
                             <br /><br />
-                            <div class="tcat"><b>{$lang->postmarathon_participants} ({$lang->postmarathon_marathon} #{$marathon[\'mid\']} &raquo; <b>{$startdate} - {$enddate})</b></div><br />
+                            <div class="tcat">{$lang->postmarathon_participants} ({$lang->postmarathon_marathon} #{$marathon[\'mid\']} &raquo; <b>{$startdate} - {$enddate})</b></div><br />
                             <table class="tborder" cellpadding="5" cellspacing="5">
                                 <tr>
                                     <td class="tcat" align="center">
-                                        {$postmarathon_player}
+                                        {$lang->postmarathon_player}
                                     </td>
                                     <td class="tcat" align="center">
                                         {$lang->postmarathon_posts} ({$gesamtpostcount} / {$postcount})
@@ -173,6 +173,7 @@ function postmarathon_activate()
                                     </td>
                                 </tr>
                             {$user_bit}
+                            {$marathon_savedata}
                             </table>
                         </div>
                     </td>
@@ -300,7 +301,7 @@ function postmarathon_activate()
     ];
     $db->insert_query("templates", $misc_marathon_savedata);
 
-    $mindex_boardstats_marathon = [
+    $index_boardstats_marathon = [
         'title' => "index_boardstats_marathon",
         'template' => $db->escape_string('<table style="tborder" align="center" cellspacing="5" cellpadding="5" class="smalltext">
         <tr>
@@ -329,12 +330,19 @@ function postmarathon_activate()
     ];
     $db->insert_query("templates", $index_boardstats_marathon);
 
+    include MYBB_ROOT."/inc/adminfunctions_templates.php";
+    find_replace_templatesets("index_boardstats", "#".preg_quote('</table>')."#i", '</table> {$index_marathon}');
+
 }
 
 function postmarathon_deactivate()
 {
     global $db;
-    $db->delete_query("templates", "title LIKE '%misc_marathon%'");
+    $db->delete_query("templates", "title LIKE '%_marathon%'");
+
+    include MYBB_ROOT."/inc/adminfunctions_templates.php";
+    find_replace_templatesets("index_boardstats", "#".preg_quote('{$index_marathon}')."#i", '', 0);
+    
 }
 
 function postmarathon_index() {
@@ -396,16 +404,18 @@ function postmarathon_misc() {
         $marathon = $db->fetch_array($query);
 
         // check for active marathon
-        $check_active = $db->fetch_field($db->query("SELECT mduid FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '{$marathon['mid']} LIMIT 1'"), "mduid");
+        $query_mduid = $db->query("SELECT mduid FROM ".TABLE_PREFIX."marathon_users_data");
+        $query_mid = $db->query("SELECT mid FROM ".TABLE_PREFIX."marathon");
+        $check_active = $db->fetch_field($db->query("SELECT mduid FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '{$marathon['mid']}' LIMIT 1"), "mduid");
         // check if user is admin
         if($mybb->usergroup['cancp'] == 1) {
-            if($check_active) {
+            if($check_active || (mysqli_num_rows($query_mduid) == 0 && mysqli_num_rows($query_mid) == 0)) {
                 eval("\$marathon_admin = \"".$templates->get("misc_marathon_admin")."\";");
             } else {
                 eval("\$marathon_savedata = \"".$templates->get("misc_marathon_savedata")."\";");
             }
         }
-        if(!$check_active) {
+        if(!$check_active && (mysqli_num_rows($query_mduid) > 0 || mysqli_num_rows($query_mid) > 0)) {
             if($mybb->user['uid'] != 0) {
                 eval("\$marathon_newuser = \"".$templates->get("misc_marathon_newuser")."\";");
             }
