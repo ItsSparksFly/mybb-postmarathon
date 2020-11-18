@@ -291,7 +291,7 @@ function postmarathon_activate()
     $misc_marathon_savedata = [
         'title' => "misc_marathon_savedata",
         'template' => $db->escape_string('								<tr>
-        <td class="trow2" colspan="4" align="center"><form method="post" id="savemarathon" action="misc.php"><br />{$lang->postmarathon_savedata}<br />
+        <td class="trow2" colspan="4" align="center"><br /><div style=" width: 40%;">{$lang->postmarathon_submit_data_desc}</div><br /><form method="post" id="savemarathon" action="misc.php">{$lang->postmarathon_savedata}<br />
 <input type="hidden" name="action" value="do_marathon_savedata" />
 <input type="submit" value="{$lang->postmarathon_submit_data}" class="button" />
             </form><br /></td></tr>'),

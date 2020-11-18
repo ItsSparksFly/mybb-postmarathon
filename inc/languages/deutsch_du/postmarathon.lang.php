@@ -19,4 +19,5 @@ $l['postmarathon_empty_goal'] = "Kein Ziel gesetzt";
 $l['postmarathon_submit_data'] = "Daten speichern";
 $l['postmarathon_outcome'] = "Ergebnisse des letzten Postmarathons";
 $l['postmarathon_top_player'] = "Top-Spieler";
+$l['postmarathon_submit_data_desc'] = "Mit einem Klick auf den Button erklärst du den Marathon offiziell für beendet. Im Index deines Forums wird anschließend eine Tabelle mit den Spitzenreitern des letzten Marathons angezeigt.";
 ?>
