@@ -376,7 +376,9 @@ function postmarathon_index() {
     WHERE chars = (SELECT MAX(chars) FROM ".TABLE_PREFIX."marathon_users_data WHERE mid = '$mid')
     "), "fid".$ufid);
 
-    eval("\$index_marathon = \"".$templates->get("index_boardstats_marathon")."\";");
+    if($topuserposts != 0) {
+        eval("\$index_marathon = \"".$templates->get("index_boardstats_marathon")."\";");
+    }
 }
 
 function postmarathon_misc() {
@@ -403,6 +405,18 @@ function postmarathon_misc() {
         ");
         $marathon = $db->fetch_array($query);
 
+        // format marathon dates
+        $startdate = date('d.m.Y', $marathon['startdate']);
+        $enddate = date('d.m.Y', $marathon['enddate']);
+
+        // get goals to latest marathon
+        $query = $db->query("
+            SELECT * FROM ".TABLE_PREFIX."marathon_users
+            WHERE uid = '{$userid}'
+            AND mid = '{$marathon['mid']}'
+        ");
+        $marathon_goals = $db->fetch_array($query);
+
         // check for active marathon
         $query_mduid = $db->query("SELECT mduid FROM ".TABLE_PREFIX."marathon_users_data");
         $query_mid = $db->query("SELECT mid FROM ".TABLE_PREFIX."marathon");
@@ -423,18 +437,6 @@ function postmarathon_misc() {
         else {
             $marathon_newuser = "<center>Aktuell findet im <em>".$mybb->settings['bbname']."</em> kein Postingmarathon statt. <br /> Es werden die Ergebnisse vom letzten Marathon dargestellt.</center>";
         }
-
-        // format marathon dates
-        $startdate = date('d.m.Y', $marathon['startdate']);
-        $enddate = date('d.m.Y', $marathon['enddate']);
-
-        // get goals to latest marathon
-        $query = $db->query("
-            SELECT * FROM ".TABLE_PREFIX."marathon_users
-            WHERE uid = '{$userid}'
-            AND mid = '{$marathon['mid']}'
-        ");
-        $marathon_goals = $db->fetch_array($query);
 
 
         // get user's marathon data
