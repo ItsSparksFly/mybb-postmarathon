@@ -460,6 +460,7 @@ function postmarathon_misc() {
             // set up variables
             $postscharcount = 0;
             $postswordcount = 0;
+            $inplayposts_count = 0;
             $uid = $marathon_user['uid'];
 
 			$username = $marathon_user['fid'.$ufid];
@@ -493,6 +494,7 @@ function postmarathon_misc() {
                 foreach($boardlist as $board) {
                     $inplaypost['parentlist'] = ",".$inplaypost['parentlist'].",";
                     if(preg_match("/,$board,/i", $inplaypost['parentlist'])) {
+                        $inplayposts_count++;
                         $postcharcount = strlen(strip_tags($inplaypost['message']));
                         $postscharcount += $postcharcount;
                         $searchexp = array("\"", "”", "„", "-", "_", "<", ">", "/", "–", "[", "]");
@@ -501,7 +503,6 @@ function postmarathon_misc() {
                     }
                 }
             }
-            $inplayposts_count = mysqli_num_rows($query_2);
             $gesamtpostcount += $inplayposts_count;
             $gesamtcharscount += $postscharcount;
             $gesamtwordcount += $postswordcount;
